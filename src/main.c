@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
     // Wait for user input and replace the newline character with a null terminator
     char input[100];
     fgets(input, 100, stdin);
-    input[strcspn(input, "\n")] = 0;
+    input[strlen(input) - 1] = '\0';
 
     printf("%s: command not found\n", input);
   }
