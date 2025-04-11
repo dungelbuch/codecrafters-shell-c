@@ -3,17 +3,20 @@
 #include <string.h>
 
 int main(int argc, char *argv[]) {
-  // Flush after every printf
-  setbuf(stdout, NULL);
 
-  // Uncomment this block to pass the first stage
-  printf("$ ");
+  while (1) {}
+    // Flush after every printf
+    setbuf(stdout, NULL);
 
-  // Wait for user input and replace the newline character with a null terminator
-  char input[100];
-  fgets(input, 100, stdin);
-  input[strcspn(input, "\n")] = 0;
+    // Uncomment this block to pass the first stage
+    printf("$ ");
 
-  printf("%s: command not found\n", input);
-  return 0;
+    // Wait for user input and replace the newline character with a null terminator
+    char input[100];
+    fgets(input, 100, stdin);
+    input[strcspn(input, "\n")] = 0;
+
+    printf("%s: command not found\n", input);
+    return 0;
+  }
 }
