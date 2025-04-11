@@ -16,12 +16,19 @@ int main(int argc, char *argv[]) {
     fgets(input, 100, stdin);
     input[strlen(input) - 1] = '\0';
 
+    // Extract first string of input
+    char command[100];
+    sscanf(input, "%s", command);
+
     // Check for exit command
-    if (strcmp(input, "exit 0") == 0) {
-      break;
+    if (strcmp(command, "echo") == 0) {
+      printf("%s\n", input + strlen("echo") + 1);
+    } else if (strcmp(command, "exit") == 0) {
+      break; 
+    } else {
+      printf("%s: command not found\n", input);
     }
 
-    printf("%s: command not found\n", input);
   }
 
   return 0;
