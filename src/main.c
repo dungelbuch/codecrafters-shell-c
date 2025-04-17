@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
-#define SH_IN_LEN 100
+#define INPUT_LEN 100
 #define CMD_LEN 20
 #define BUILTIN_FUNCS 10
 #define PATH_MAX_LEN 1024
+#define MAX_NUM_INPUT 10
 
 
 /**
@@ -43,6 +45,59 @@ char *find_binary(const char *cmd) {
 }
 
 /**
+ * @brief  This function extracts tokens from a given input string. 
+ * It duplicates the input string to avoid modifying the original. Therefore,
+ * the caller is responsible for freeing the memory allocated for the tokens.
+ * 
+ * @param input_str The input string to be tokenized.
+ * @param num_args The maximum number of arguments to extract.
+ * @return char** An array of pointers to the extracted tokens.
+ **/
+char **extract_tokens(char *str, const int num_args) {
+	char **argv = malloc(num_args * sizeof(char *));
+	int agrv_index = 0;
+
+	// Duplicate input string and tokenize it
+	char *str_copy = strdup(str);
+	char *token = strtok(str_copy, " ");
+	while (token != NULL && agrv_index < num_args - 1) {
+		argv[agrv_index++] = token;
+		token = strtok(NULL, " ");
+	}
+	// Add NULL terminator to the end of the array
+	argv[agrv_index] = NULL;
+
+	return argv;
+} 
+
+/**
+ * @brief This function forks a new process and executes a binary in it.
+ * 
+ * @param bin The binary to execute.
+ * @param args The arguments to pass to the binary.
+ **/
+void fork_and_exec(char *bin, char **args) {
+	pid_t pid = fork();
+	if (pid == 0) {
+		// Child process
+		execv(bin, args);
+		perror("execv failed");
+		exit(1); // If execv fails
+	} else if (pid < 0) {
+		perror("Fork failed");
+		exit(1);
+	} else {
+		// Parent process
+		int status;
+		waitpid(pid, &status, 0);
+	}
+}
+
+/******************************************************************************/
+/* Main function of the shell.                                                */
+/******************************************************************************/
+
+/**
  * @brief Main function of the shell.
  * 
  * @param argc Number of command line arguments.
@@ -50,15 +105,17 @@ char *find_binary(const char *cmd) {
  * @return int Exit status of the shell.
  **/
 int main(int argc, char *argv[]) {
-
-    while (1) {
+	// List of builtin commands
+	char builtins[][BUILTIN_FUNCS] = {"exit", "echo", "type"};
+ 
+	while (1) {
         // Print the prompt and flush stdout
         printf("$ ");
+		
         fflush(stdout);
-
         // Wait for user input and replace the newline with null terminator
-        char input[SH_IN_LEN];
-        fgets(input, SH_IN_LEN, stdin);
+        char input[INPUT_LEN];
+        fgets(input, INPUT_LEN, stdin);
         input[strlen(input) - 1] = '\0';
 
 		// Check for exit command
@@ -66,13 +123,10 @@ int main(int argc, char *argv[]) {
 			return 0;
 		}
 		
-		// List of builtin commands
-		char builtins[][BUILTIN_FUNCS] = {"exit", "echo", "type"};
-		// Extract command (first word) from input
-		char cmd[CMD_LEN];
-		sscanf(input, "%s", cmd);
+		// Extract tokens from input
+		char **args = extract_tokens(input, MAX_NUM_INPUT);
+		char *cmd = args[0];
 
-		// Execute the command
         if ( !strcmp(cmd, "echo") ) {
 			printf("%s\n", input + strlen("echo") + 1);
         } else if ( !strcmp(cmd, "type") ) {
@@ -99,8 +153,16 @@ int main(int argc, char *argv[]) {
 			}
 	
 		} else {
-			printf("%s: command not found\n", cmd);
+			char *bin_path = find_binary(cmd);
+			if (bin_path) {
+				fork_and_exec(bin_path, args);
+			} else {
+				printf("%s: command not found\n", cmd);
+			}
 		}
+
+
+		
 	}
 
 	return 0;
