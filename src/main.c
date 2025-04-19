@@ -6,7 +6,7 @@
 
 #define INPUT_LEN 100
 #define CMD_LEN 20
-#define BUILTIN_FUNCS 10
+#define NUM_BUILTINS 10
 #define PATH_MAX_LEN 1024
 #define MAX_NUM_INPUT 10
 
@@ -17,7 +17,7 @@
  * @param cmd The command to search for.
  * @return char* The full path of the command if found, NULL otherwise.
  **/
-char *find_binary(const char *cmd) {
+char *__find_binary(const char *cmd) {
 	// Get pointer to PATH environment variable
 	char *path = getenv("PATH");
 	if (path == NULL) return NULL;
@@ -45,21 +45,69 @@ char *find_binary(const char *cmd) {
 }
 
 /**
+ * @brief This function prints the string passed to it after the echo command.
+ * 
+ * @param str The string to print.
+ **/
+void __echo(const char *str) {
+	// Print the string after the echo command
+	str = str + strlen("echo") + 1;
+	printf("%s\n", str);
+}
+
+/**
+ * @brief Find builtin functions in the shell and print if found.
+ * 
+ * @param cmd_type The command to check.
+ * @param builtins The list of builtin functions.
+ * @param num_builtins The number of builtin functions.
+ * 
+ * @return int 1 if the command is a builtin, 0 otherwise.
+ **/
+int __builtin_func(const char *cmd_type, char builtins[][NUM_BUILTINS], int num_builtins) {
+	// Search for the command in the list of builtins and print if found
+	for (int i = 0; i < num_builtins; i++) {
+		if ( !strcmp(cmd_type, builtins[i]) ) {
+			printf("%s is a shell builtin\n", builtins[i]);
+			return 1;
+			break;
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Print current working directory.
+ * 
+ **/
+void __print_cwd() {
+	char cwd[PATH_MAX_LEN];
+	if (getcwd(cwd, sizeof(cwd)) != NULL) {
+		printf("%s\n", cwd);
+	} else {
+		perror("getcwd() error");
+	}
+}
+
+
+/**
  * @brief  This function extracts tokens from a given input string. 
  * It duplicates the input string to avoid modifying the original. Therefore,
  * the caller is responsible for freeing the memory allocated for the tokens.
  * 
  * @param input_str The input string to be tokenized.
  * @param num_args The maximum number of arguments to extract.
+ * @param str_copy A pointer to the string copy that will be used for tokenization.
  * @return char** An array of pointers to the extracted tokens.
  **/
-char **extract_tokens(char *str, const int num_args) {
+char **__extract_tokens(char *str, const int num_args, char **str_copy) {
 	char **argv = malloc(num_args * sizeof(char *));
 	int agrv_index = 0;
 
 	// Duplicate input string and tokenize it
-	char *str_copy = strdup(str);
-	char *token = strtok(str_copy, " ");
+	*str_copy = strdup(str);
+	char *token = strtok(*str_copy, " ");
 	while (token != NULL && agrv_index < num_args - 1) {
 		argv[agrv_index++] = token;
 		token = strtok(NULL, " ");
@@ -76,7 +124,7 @@ char **extract_tokens(char *str, const int num_args) {
  * @param bin The binary to execute.
  * @param args The arguments to pass to the binary.
  **/
-void fork_and_exec(char *bin, char **args) {
+void __fork_and_exec(char *bin, char **args) {
 	pid_t pid = fork();
 	if (pid == 0) {
 		// Child process
@@ -106,7 +154,7 @@ void fork_and_exec(char *bin, char **args) {
  **/
 int main(int argc, char *argv[]) {
 	// List of builtin commands
-	char builtins[][BUILTIN_FUNCS] = {"exit", "echo", "type"};
+	char builtins[][NUM_BUILTINS] = {"exit", "echo", "type", "pwd"};
  
 	while (1) {
         // Print the prompt and flush stdout
@@ -124,45 +172,38 @@ int main(int argc, char *argv[]) {
 		}
 		
 		// Extract tokens from input
-		char **args = extract_tokens(input, MAX_NUM_INPUT);
+		char *input_copy = NULL;
+		char **args = __extract_tokens(input, MAX_NUM_INPUT, &input_copy);
 		char *cmd = args[0];
 
         if ( !strcmp(cmd, "echo") ) {
-			printf("%s\n", input + strlen("echo") + 1);
-        } else if ( !strcmp(cmd, "type") ) {
+			// Echo command
+			__echo(input);
+
+        } else if (!strcmp(cmd, "type")) {
 			// Check if command is a builtin	
-			int is_builtin = 0;
 			const char *cmd_type = input + strlen("type") + 1;			
-			for (int i = 0; i < sizeof(builtins) / sizeof(builtins[0]); i++) {
-				if ( !strcmp(cmd_type, builtins[i]) ) {
-					printf("%s is a shell builtin\n", builtins[i]);
-					is_builtin = 1;
-					break;
-				}
-			}
+			int is_builtin = __builtin_func(cmd_type, builtins, NUM_BUILTINS);
 
 			// If not, check if it's an executable in PATH
 			if (!is_builtin) {
-				char *path = find_binary(cmd_type);
-				//printf("path: %s\n", path);
-				if (path) {
-					printf("%s is %s\n", cmd_type, path);
-				} else {
-					printf("%s: not found\n", cmd_type);
-				}
+				char *bin = __find_binary(cmd_type);
+				bin ? printf("%s is %s\n", cmd_type, bin) : printf("%s: not found\n", cmd_type);
 			}
-	
+
+		} else if (!strcmp(cmd, "pwd")) {
+			// Print the current working directory
+			__print_cwd();
+
 		} else {
-			char *bin_path = find_binary(cmd);
-			if (bin_path) {
-				fork_and_exec(bin_path, args);
-			} else {
-				printf("%s: command not found\n", cmd);
-			}
+			// If command is not a builtin, check if it's an executable in PATH and execute it
+			char *bin = __find_binary(cmd);
+			bin ? __fork_and_exec(bin, args) : printf("%s: command not found\n", cmd);
+			
 		}
 
-
-		
+		// Free the memory allocated for the input string's copy
+		free(input_copy);
 	}
 
 	return 0;
