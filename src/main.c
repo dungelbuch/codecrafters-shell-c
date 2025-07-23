@@ -140,6 +140,16 @@ void __echo(const char *str) {
 void __cd(const char *str) {
 	// Extract the directory from the input string
 	str = str + strlen("cd ");
+
+	// If the directory starts with '~', replace it with the home directory
+	if (str[0] == '~') {
+		const char *home = getenv("HOME");
+		char *home_dir = malloc(strlen(home) + strlen(str));
+		sprintf(home_dir, "%s%s", home, str + 1);
+		str = home_dir;
+	}
+
+	// Change the directory
 	if (chdir(str) != 0) {
 		fprintf(stderr, "cd: %s: No such file or directory\n", str);
 	}
