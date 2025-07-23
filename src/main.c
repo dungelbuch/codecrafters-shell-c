@@ -144,7 +144,8 @@ void __cd(const char *str) {
 	// If the directory starts with '~', replace it with the home directory
 	if (str[0] == '~') {
 		const char *home = getenv("HOME");
-		char *home_dir = malloc(strlen(home) + strlen(str));
+		int len = strlen(home) + strlen(str) + 1; // +1 for null terminator
+		char *home_dir = malloc(len * sizeof(char));
 		sprintf(home_dir, "%s%s", home, str + 1);
 		str = home_dir;
 	}
