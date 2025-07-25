@@ -86,8 +86,8 @@ char **__get_tokens(char *str) {
 
         // process all consecutive parts as a single token
         while (*ptr && *ptr != ' ') {
-            // Hanndle single quotes
-            if (*ptr == '\'') {
+            // Hanndle single and double quotes
+            if (*ptr == '\'' || *ptr == '\"') {
                 char quote = *ptr++;  // save quote char and skip it
                 while (*ptr && *ptr != quote) {
                     *write_ptr++ = *ptr++;  // copy until closing quote
