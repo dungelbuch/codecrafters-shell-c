@@ -152,11 +152,12 @@ void __fork_and_exec(char *bin, char **args) {
 /* Helper functions to offload specific commands.                             */
 /******************************************************************************/
 
-// Helper to check if string starts and ends with same quote
-bool is_quote(char c) {
-    return c == '\'' || c == '"';
-}
 
+/**
+ * @brief This function prints the arguments passed to it.
+ *
+ * @param args The arguments to print.
+ */
 void __echo(char **args) {
     // skip the "echo" command at args[0]
     for (int i = 1; args[i] != NULL; i++) {
