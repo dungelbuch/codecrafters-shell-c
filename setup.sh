@@ -10,5 +10,5 @@ fi
 
 # Set path for vcpkg
 echo "Run this command manually (once) to set the VCPKG_ROOT environment variable:"
-echo "export VCPKG_ROOT=$(pwd)/vcpkg"
+echo 'export VCPKG_ROOT=$(pwd)/vcpkg'
 

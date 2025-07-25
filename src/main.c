@@ -2,13 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <sys/wait.h>
 
-#define INPUT_LEN 100
-#define CMD_LEN 20
-#define NUM_BUILTINS 10
+#define NUM_BUILTINS 5
+#define INPUT_LEN 1024
 #define PATH_MAX_LEN 1024
-#define MAX_NUM_INPUT 10
 
 
 /**
@@ -53,16 +52,14 @@ char *__find_binary(const char *cmd) {
  * 
  * @return int 1 if the command is a builtin, 0 otherwise.
  **/
-int __builtin_func(const char *cmd_type, char builtins[][NUM_BUILTINS], int num_builtins) {
+int __builtin_func(const char *cmd_type, const char *builtins[], int num_builtins) {
 	// Search for the command in the list of builtins and print if found
 	for (int i = 0; i < num_builtins; i++) {
 		if ( !strcmp(cmd_type, builtins[i]) ) {
 			printf("%s is a shell builtin\n", builtins[i]);
 			return 1;
-			break;
 		}
 	}
-
 	return 0;
 }
 
@@ -71,26 +68,62 @@ int __builtin_func(const char *cmd_type, char builtins[][NUM_BUILTINS], int num_
  * It duplicates the input string to avoid modifying the original. Therefore,
  * the caller is responsible for freeing the memory allocated for the tokens.
  * 
- * @param input_str The input string to be tokenized.
- * @param num_args The maximum number of arguments to extract.
- * @param str_copy A pointer to the string copy that will be used for tokenization.
+ * @param str The input string to be tokenized.
  * @return char** An array of pointers to the extracted tokens.
  **/
-char **__extract_tokens(char *str, const int num_args, char **str_copy) {
-	char **argv = malloc(num_args * sizeof(char *));
-	int agrv_index = 0;
+char **__get_tokens(char *str) {
+    int capacity = 10; // Initial capacity for the array of pointers
+    char **argv = malloc(capacity * sizeof(char *));
+    int idx = 0;
 
-	// Duplicate input string and tokenize it
-	*str_copy = strdup(str);
-	char *token = strtok(*str_copy, " ");
-	while (token != NULL && agrv_index < num_args - 1) {
-		argv[agrv_index++] = token;
-		token = strtok(NULL, " ");
-	}
-	// Add NULL terminator to the end of the array
-	argv[agrv_index] = NULL;
+	// Skip leading spaces
+	char *ptr = str;
+	while (*ptr == ' ') ptr++;
 
-	return argv;
+    while (*ptr) {
+        // allocate memory for a new token
+        char *tok = malloc(strlen(str) + 1);
+        char *write_ptr = tok;
+
+        // process all consecutive parts as a single token
+        while (*ptr && *ptr != ' ') {
+			// Hanndle single quotes
+            if (*ptr == '\'') {
+                char quote = *ptr++;   		 // save quote char and skip it
+                while (*ptr && *ptr != quote) {
+                    *write_ptr++ = *ptr++;	// copy until closing quote
+                }
+                if (*ptr == quote) ptr++; 	// skip closing quote
+            } else {
+				// copy normal character
+                *write_ptr++ = *ptr++;	 	
+            }
+        }
+
+        *write_ptr = '\0'; 					// null-term the token
+
+        // Reallocate if needed
+        if (idx == capacity) {
+            capacity *= 2;
+            argv = realloc(argv, capacity * sizeof(char *));
+            if (argv == NULL) {
+                perror("Failed to allocate memory for tokens");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+		// Add the token to the array
+        argv[idx++] = tok;
+
+		// Skip trailing spaces until next character
+		while (*ptr == ' ') ptr++;
+    }
+
+	// Resize and null-terminate the array of tokens
+    argv = realloc(argv, (idx + 1) * sizeof(char *)); 
+	argv[idx] = NULL; 
+
+    return argv;
 } 
 
 /**
@@ -120,16 +153,20 @@ void __fork_and_exec(char *bin, char **args) {
 /* Helper functions to offload specific commands.                             */
 /******************************************************************************/ 
 
-/**
- * @brief This function prints the string passed to it after the echo command.
- * 
- * @param str The string to print.
- **/
-void __echo(const char *str) {
-	// Extract the string after "echo "
-	str = str + strlen("echo ");
-	printf("%s\n", str);
+// Helper to check if string starts and ends with same quote
+bool is_quote(char c) {
+    return c == '\'' || c == '"';
 }
+
+void __echo(char **args) {
+	// skip the "echo" command at args[0]
+	for(int i = 1; args[i] != NULL; i++) {
+		if (i > 1) printf(" ");
+		printf("%s", args[i]);
+	}
+	putchar('\n'); 
+}
+
 
 /**
  * @brief This function changes the current working directory to the one 
@@ -137,23 +174,33 @@ void __echo(const char *str) {
  * 
  * @param str The directory to change to.
  **/
-void __cd(const char *str) {
-	// Extract the directory from the input string
-	str = str + strlen("cd ");
+void __cd(char **args) {
+	const char *dir = args[1]; // skip the command itself
+
+	// If no directory is specified, change to home directory
+	if (dir == NULL) {
+		const char *home = getenv("HOME");
+		if (chdir(home) != 0) perror("cd");
+		return;
+	}
 
 	// If the directory starts with '~', replace it with the home directory
-	if (str[0] == '~') {
+	if (dir[0] == '~') {
 		const char *home = getenv("HOME");
-		int len = strlen(home) + strlen(str) + 1; // +1 for null terminator
+		int len = strlen(home) + strlen(dir) + 1; // +1 for null terminator
 		char *home_dir = malloc(len * sizeof(char));
-		sprintf(home_dir, "%s%s", home, str + 1);
-		str = home_dir;
+		snprintf(home_dir, len, "%s%s", home, dir + 1);
+		if (chdir(home_dir) != 0) {	// Change the directory
+			fprintf(stderr, "cd: %s: No such file or directory\n", home_dir);
+		}
+		free(home_dir);
+	} else {
+		// Change the directory
+		if (chdir(dir) != 0) {
+			fprintf(stderr, "cd: %s: No such file or directory\n", dir);
+		}
 	}
-
-	// Change the directory
-	if (chdir(str) != 0) {
-		fprintf(stderr, "cd: %s: No such file or directory\n", str);
-	}
+	return;
 }
 
 /**
@@ -177,9 +224,15 @@ void __pwd() {
  * @param builtins The list of builtin functions.
  * @param num_builtins The number of builtin functions.
  **/
-void __handle_type_cmd(const char *cmd, char builtins[][NUM_BUILTINS], int num_builtins){
+void __type(char **args, const char *builtins[], int num_builtins){
+	// Check if there's an argument after "type"
+    if (args[1] == NULL) {
+        printf("type: missing argument\n");
+        return;
+    }
+
 	// Check if command is a builtin	
-	const char *cmd_type = cmd + strlen("type") + 1;	// +1 to skip the space after 'type'		
+	char *cmd_type = args[1];		
 	int is_builtin = __builtin_func(cmd_type, builtins, NUM_BUILTINS);
 
 	// If not, check if it's an executable in PATH
@@ -195,7 +248,7 @@ void __handle_type_cmd(const char *cmd, char builtins[][NUM_BUILTINS], int num_b
  * @param cmd The command to execute.
  * @param args The arguments for the command.
  */
-void __handle_ext_cmd(const char *cmd, char **args){
+void __ext_cmd(const char *cmd, char **args){
 	char *bin = __find_binary(cmd);
 	bin ? __fork_and_exec(bin, args) : printf("%s: command not found\n", cmd);
 }
@@ -213,7 +266,7 @@ void __handle_ext_cmd(const char *cmd, char **args){
  **/
 int main(int argc, char *argv[]) {
 	// List of builtin commands
-	char builtins[][NUM_BUILTINS] = {"exit", "echo", "type", "pwd", "cd"};
+	const char *builtins[NUM_BUILTINS] = {"exit", "echo", "type", "pwd", "cd"};
  
 	while (1) {
         // Print the prompt and flush stdout
@@ -231,25 +284,26 @@ int main(int argc, char *argv[]) {
 		}
 		
 		// Extract tokens from input
-		char *input_copy = NULL;
-		char **args = __extract_tokens(input, MAX_NUM_INPUT, &input_copy);
-		char *cmd = args[0];
+		char **toks = __get_tokens(input);
+		char *cmd = toks[0];
 		
         if ( !strcmp(cmd, "echo") ) {
-			__echo(input);
+			__echo(toks);
 		} else if ( !strcmp(cmd, "cd") ) {
-			__cd(input);
+			__cd(toks);
 		} else if ( !strcmp(cmd, "pwd") ) {
 			__pwd();
         } else if ( !strcmp(cmd, "type") ) {
-			__handle_type_cmd(input, builtins, NUM_BUILTINS);
+			__type(toks, builtins, NUM_BUILTINS);
 		} else {
-			__handle_ext_cmd(cmd, args);
+			__ext_cmd(cmd, toks);
 		}
 		
-		// Free the memory allocated for the input string's copy
-		free(input_copy);
-		free(args);
+		// Free the memory allocated for tokens
+		for (int i = 0; toks[i] != NULL; i++) {
+			free(toks[i]); 
+		}
+		free(toks);
 	}
 
 	return 0;
