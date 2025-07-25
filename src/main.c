@@ -1,84 +1,83 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <stdbool.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #define NUM_BUILTINS 5
 #define INPUT_LEN 1024
 #define PATH_MAX_LEN 1024
 
-
 /**
  * @brief This function check if a given command exists in the system's PATH.
- * 
+ *
  * @param cmd The command to search for.
  * @return char* The full path of the command if found, NULL otherwise.
  **/
 char *__find_binary(const char *cmd) {
-	// Get pointer to PATH environment variable
-	char *path = getenv("PATH");
-	if (path == NULL) return NULL;
+    // Get pointer to PATH environment variable
+    char *path = getenv("PATH");
+    if (path == NULL) return NULL;
 
-	// Duplicate PATH to avoid modifying the original, get first token
-	char *path_copy = strdup(path);
-	char *dir = strtok(path_copy, ":");
-	static char full_path[PATH_MAX_LEN];
-	
-	while (dir != NULL) {
-		// Append command to directory to form full path
-		snprintf(full_path, sizeof(full_path), "%s/%s", dir, cmd);
-		// Check if the file exists and is executable
-		int bin_exist = access(full_path, X_OK);
-		if (bin_exist == 0) {
-			free(path_copy);
-			return full_path;
-		}
-		// Move to the next token
-		dir = strtok(NULL, ":");
-	}
-	
-	free(path_copy);
-	return NULL;
+    // Duplicate PATH to avoid modifying the original, get first token
+    char *path_copy = strdup(path);
+    char *dir = strtok(path_copy, ":");
+    static char full_path[PATH_MAX_LEN];
+
+    while (dir != NULL) {
+        // Append command to directory to form full path
+        snprintf(full_path, sizeof(full_path), "%s/%s", dir, cmd);
+        // Check if the file exists and is executable
+        int bin_exist = access(full_path, X_OK);
+        if (bin_exist == 0) {
+            free(path_copy);
+            return full_path;
+        }
+        // Move to the next token
+        dir = strtok(NULL, ":");
+    }
+
+    free(path_copy);
+    return NULL;
 }
 
 /**
  * @brief Find builtin functions in the shell and print if found.
- * 
+ *
  * @param cmd_type The command to check.
  * @param builtins The list of builtin functions.
  * @param num_builtins The number of builtin functions.
- * 
+ *
  * @return int 1 if the command is a builtin, 0 otherwise.
  **/
 int __builtin_func(const char *cmd_type, const char *builtins[], int num_builtins) {
-	// Search for the command in the list of builtins and print if found
-	for (int i = 0; i < num_builtins; i++) {
-		if ( !strcmp(cmd_type, builtins[i]) ) {
-			printf("%s is a shell builtin\n", builtins[i]);
-			return 1;
-		}
-	}
-	return 0;
+    // Search for the command in the list of builtins and print if found
+    for (int i = 0; i < num_builtins; i++) {
+        if (!strcmp(cmd_type, builtins[i])) {
+            printf("%s is a shell builtin\n", builtins[i]);
+            return 1;
+        }
+    }
+    return 0;
 }
 
 /**
- * @brief  This function extracts tokens from a given input string. 
+ * @brief  This function extracts tokens from a given input string.
  * It duplicates the input string to avoid modifying the original. Therefore,
  * the caller is responsible for freeing the memory allocated for the tokens.
- * 
+ *
  * @param str The input string to be tokenized.
  * @return char** An array of pointers to the extracted tokens.
  **/
 char **__get_tokens(char *str) {
-    int capacity = 10; // Initial capacity for the array of pointers
+    int capacity = 10;  // Initial capacity for the array of pointers
     char **argv = malloc(capacity * sizeof(char *));
     int idx = 0;
 
-	// Skip leading spaces
-	char *ptr = str;
-	while (*ptr == ' ') ptr++;
+    // Skip leading spaces
+    char *ptr = str;
+    while (*ptr == ' ') ptr++;
 
     while (*ptr) {
         // allocate memory for a new token
@@ -87,20 +86,20 @@ char **__get_tokens(char *str) {
 
         // process all consecutive parts as a single token
         while (*ptr && *ptr != ' ') {
-			// Hanndle single quotes
+            // Hanndle single quotes
             if (*ptr == '\'') {
-                char quote = *ptr++;   		 // save quote char and skip it
+                char quote = *ptr++;  // save quote char and skip it
                 while (*ptr && *ptr != quote) {
-                    *write_ptr++ = *ptr++;	// copy until closing quote
+                    *write_ptr++ = *ptr++;  // copy until closing quote
                 }
-                if (*ptr == quote) ptr++; 	// skip closing quote
+                if (*ptr == quote) ptr++;  // skip closing quote
             } else {
-				// copy normal character
-                *write_ptr++ = *ptr++;	 	
+                // copy normal character
+                *write_ptr++ = *ptr++;
             }
         }
 
-        *write_ptr = '\0'; 					// null-term the token
+        *write_ptr = '\0';  // null-term the token
 
         // Reallocate if needed
         if (idx == capacity) {
@@ -112,46 +111,46 @@ char **__get_tokens(char *str) {
             }
         }
 
-		// Add the token to the array
+        // Add the token to the array
         argv[idx++] = tok;
 
-		// Skip trailing spaces until next character
-		while (*ptr == ' ') ptr++;
+        // Skip trailing spaces until next character
+        while (*ptr == ' ') ptr++;
     }
 
-	// Resize and null-terminate the array of tokens
-    argv = realloc(argv, (idx + 1) * sizeof(char *)); 
-	argv[idx] = NULL; 
+    // Resize and null-terminate the array of tokens
+    argv = realloc(argv, (idx + 1) * sizeof(char *));
+    argv[idx] = NULL;
 
     return argv;
-} 
+}
 
 /**
  * @brief This function forks a new process and executes a binary in it.
- * 
+ *
  * @param bin The binary to execute.
  * @param args The arguments to pass to the binary.
  **/
 void __fork_and_exec(char *bin, char **args) {
-	pid_t pid = fork();
-	if (pid == 0) {
-		// Child process
-		execv(bin, args);
-		perror("execv failed");
-		exit(1); // If execv fails
-	} else if (pid < 0) {
-		perror("Fork failed");
-		exit(1);
-	} else {
-		// Parent process
-		int status;
-		waitpid(pid, &status, 0);
-	}
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Child process
+        execv(bin, args);
+        perror("execv failed");
+        exit(1);  // If execv fails
+    } else if (pid < 0) {
+        perror("Fork failed");
+        exit(1);
+    } else {
+        // Parent process
+        int status;
+        waitpid(pid, &status, 0);
+    }
 }
 
 /******************************************************************************/
 /* Helper functions to offload specific commands.                             */
-/******************************************************************************/ 
+/******************************************************************************/
 
 // Helper to check if string starts and ends with same quote
 bool is_quote(char c) {
@@ -159,87 +158,86 @@ bool is_quote(char c) {
 }
 
 void __echo(char **args) {
-	// skip the "echo" command at args[0]
-	for(int i = 1; args[i] != NULL; i++) {
-		if (i > 1) printf(" ");
-		printf("%s", args[i]);
-	}
-	putchar('\n'); 
+    // skip the "echo" command at args[0]
+    for (int i = 1; args[i] != NULL; i++) {
+        if (i > 1) printf(" ");
+        printf("%s", args[i]);
+    }
+    putchar('\n');
 }
 
-
 /**
- * @brief This function changes the current working directory to the one 
- * specified in the input string. 
- * 
+ * @brief This function changes the current working directory to the one
+ * specified in the input string.
+ *
  * @param str The directory to change to.
  **/
 void __cd(char **args) {
-	const char *dir = args[1]; // skip the command itself
+    const char *dir = args[1];  // skip the command itself
 
-	// If no directory is specified, change to home directory
-	if (dir == NULL) {
-		const char *home = getenv("HOME");
-		if (chdir(home) != 0) perror("cd");
-		return;
-	}
+    // If no directory is specified, change to home directory
+    if (dir == NULL) {
+        const char *home = getenv("HOME");
+        if (chdir(home) != 0) perror("cd");
+        return;
+    }
 
-	// If the directory starts with '~', replace it with the home directory
-	if (dir[0] == '~') {
-		const char *home = getenv("HOME");
-		int len = strlen(home) + strlen(dir) + 1; // +1 for null terminator
-		char *home_dir = malloc(len * sizeof(char));
-		snprintf(home_dir, len, "%s%s", home, dir + 1);
-		if (chdir(home_dir) != 0) {	// Change the directory
-			fprintf(stderr, "cd: %s: No such file or directory\n", home_dir);
-		}
-		free(home_dir);
-	} else {
-		// Change the directory
-		if (chdir(dir) != 0) {
-			fprintf(stderr, "cd: %s: No such file or directory\n", dir);
-		}
-	}
-	return;
+    // If the directory starts with '~', replace it with the home directory
+    if (dir[0] == '~') {
+        const char *home = getenv("HOME");
+        int len = strlen(home) + strlen(dir) + 1;  // +1 for null terminator
+        char *home_dir = malloc(len * sizeof(char));
+        snprintf(home_dir, len, "%s%s", home, dir + 1);
+        if (chdir(home_dir) != 0) {  // Change the directory
+            fprintf(stderr, "cd: %s: No such file or directory\n", home_dir);
+        }
+        free(home_dir);
+    } else {
+        // Change the directory
+        if (chdir(dir) != 0) {
+            fprintf(stderr, "cd: %s: No such file or directory\n", dir);
+        }
+    }
+    return;
 }
 
 /**
  * @brief Print current working directory.
- * 
+ *
  **/
 void __pwd() {
-	char cwd[PATH_MAX_LEN];
-	if (getcwd(cwd, sizeof(cwd)) != NULL) {
-		printf("%s\n", cwd);
-	} else {
-		perror("getcwd() error");
-	}
+    char cwd[PATH_MAX_LEN];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        printf("%s\n", cwd);
+    } else {
+        perror("getcwd() error");
+    }
 }
 
 /**
  * @brief This function handles the 'type' command in the shell.
  * It checks if the command is a builtin or an executable in PATH.
- * 
+ *
  * @param cmd The command to check.
  * @param builtins The list of builtin functions.
  * @param num_builtins The number of builtin functions.
  **/
-void __type(char **args, const char *builtins[], int num_builtins){
-	// Check if there's an argument after "type"
+void __type(char **args, const char *builtins[], int num_builtins) {
+    // Check if there's an argument after "type"
     if (args[1] == NULL) {
         printf("type: missing argument\n");
         return;
     }
 
-	// Check if command is a builtin	
-	char *cmd_type = args[1];		
-	int is_builtin = __builtin_func(cmd_type, builtins, NUM_BUILTINS);
+    // Check if command is a builtin
+    char *cmd_type = args[1];
+    int is_builtin = __builtin_func(cmd_type, builtins, NUM_BUILTINS);
 
-	// If not, check if it's an executable in PATH
-	if (!is_builtin) {
-		char *bin = __find_binary(cmd_type);
-		bin ? printf("%s is %s\n", cmd_type, bin) : printf("%s: not found\n", cmd_type);
-	}
+    // If not, check if it's an executable in PATH
+    if (!is_builtin) {
+        char *bin = __find_binary(cmd_type);
+        bin ? printf("%s is %s\n", cmd_type, bin) : printf("%s: not found\n", cmd_type);
+    }
 }
 
 /**
@@ -248,9 +246,9 @@ void __type(char **args, const char *builtins[], int num_builtins){
  * @param cmd The command to execute.
  * @param args The arguments for the command.
  */
-void __ext_cmd(const char *cmd, char **args){
-	char *bin = __find_binary(cmd);
-	bin ? __fork_and_exec(bin, args) : printf("%s: command not found\n", cmd);
+void __ext_cmd(const char *cmd, char **args) {
+    char *bin = __find_binary(cmd);
+    bin ? __fork_and_exec(bin, args) : printf("%s: command not found\n", cmd);
 }
 
 /******************************************************************************/
@@ -259,52 +257,52 @@ void __ext_cmd(const char *cmd, char **args){
 
 /**
  * @brief Main function of the shell.
- * 
+ *
  * @param argc Number of command line arguments.
  * @param argv Array of command line arguments.
  * @return int Exit status of the shell.
  **/
 int main(int argc, char *argv[]) {
-	// List of builtin commands
-	const char *builtins[NUM_BUILTINS] = {"exit", "echo", "type", "pwd", "cd"};
- 
-	while (1) {
+    // List of builtin commands
+    const char *builtins[NUM_BUILTINS] = {"exit", "echo", "type", "pwd", "cd"};
+
+    while (1) {
         // Print the prompt and flush stdout
         printf("$ ");
         fflush(stdout);
-		
+
         // Wait for user input and replace the newline with null terminator
         char input[INPUT_LEN];
         fgets(input, INPUT_LEN, stdin);
         input[strlen(input) - 1] = '\0';
 
-		// Check for exit command
-		if (!strcmp(input, "exit") || !strcmp(input, "exit 0")) {
-			return 0;
-		}
-		
-		// Extract tokens from input
-		char **toks = __get_tokens(input);
-		char *cmd = toks[0];
-		
-        if ( !strcmp(cmd, "echo") ) {
-			__echo(toks);
-		} else if ( !strcmp(cmd, "cd") ) {
-			__cd(toks);
-		} else if ( !strcmp(cmd, "pwd") ) {
-			__pwd();
-        } else if ( !strcmp(cmd, "type") ) {
-			__type(toks, builtins, NUM_BUILTINS);
-		} else {
-			__ext_cmd(cmd, toks);
-		}
-		
-		// Free the memory allocated for tokens
-		for (int i = 0; toks[i] != NULL; i++) {
-			free(toks[i]); 
-		}
-		free(toks);
-	}
+        // Check for exit command
+        if (!strcmp(input, "exit") || !strcmp(input, "exit 0")) {
+            return 0;
+        }
 
-	return 0;
+        // Extract tokens from input
+        char **toks = __get_tokens(input);
+        char *cmd = toks[0];
+
+        if (!strcmp(cmd, "echo")) {
+            __echo(toks);
+        } else if (!strcmp(cmd, "cd")) {
+            __cd(toks);
+        } else if (!strcmp(cmd, "pwd")) {
+            __pwd();
+        } else if (!strcmp(cmd, "type")) {
+            __type(toks, builtins, NUM_BUILTINS);
+        } else {
+            __ext_cmd(cmd, toks);
+        }
+
+        // Free the memory allocated for tokens
+        for (int i = 0; toks[i] != NULL; i++) {
+            free(toks[i]);
+        }
+        free(toks);
+    }
+
+    return 0;
 }
