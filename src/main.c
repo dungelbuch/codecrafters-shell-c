@@ -93,6 +93,9 @@ char **__get_tokens(char *str) {
                     *write_ptr++ = *ptr++;  // copy until closing quote
                 }
                 if (*ptr == quote) ptr++;  // skip closing quote
+			} else if (*ptr == '\\') {
+				ptr++;
+				if (*ptr) *write_ptr++ = *ptr++;
             } else {
                 // copy normal character
                 *write_ptr++ = *ptr++;
@@ -151,7 +154,6 @@ void __fork_and_exec(char *bin, char **args) {
 /******************************************************************************/
 /* Helper functions to offload specific commands.                             */
 /******************************************************************************/
-
 
 /**
  * @brief This function prints the arguments passed to it.
