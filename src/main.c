@@ -5,7 +5,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define NUM_BUILTINS 5
+#define NUM_BUILTINS 10
 #define INPUT_LEN 1024
 #define PATH_MAX_LEN 1024
 
@@ -47,13 +47,12 @@ char *__find_binary(const char *cmd) {
  *
  * @param cmd_type The command to check.
  * @param builtins The list of builtin functions.
- * @param num_builtins The number of builtin functions.
  *
  * @return int 1 if the command is a builtin, 0 otherwise.
  **/
-int __builtin_func(const char *cmd_type, const char *builtins[], int num_builtins) {
+int __builtin_func(const char *cmd_type, const char *builtins[]) {
     // Search for the command in the list of builtins and print if found
-    for (int i = 0; i < num_builtins; i++) {
+    for (int i = 0; builtins[i] != NULL; i++) {
         if (!strcmp(cmd_type, builtins[i])) {
             printf("%s is a shell builtin\n", builtins[i]);
             return 1;
@@ -223,9 +222,8 @@ void __pwd() {
  *
  * @param cmd The command to check.
  * @param builtins The list of builtin functions.
- * @param num_builtins The number of builtin functions.
  **/
-void __type(char **args, const char *builtins[], int num_builtins) {
+void __type(char **args, const char *builtins[]) {
     // Check if there's an argument after "type"
     if (args[1] == NULL) {
         printf("type: missing argument\n");
@@ -234,7 +232,7 @@ void __type(char **args, const char *builtins[], int num_builtins) {
 
     // Check if command is a builtin
     char *cmd_type = args[1];
-    int is_builtin = __builtin_func(cmd_type, builtins, NUM_BUILTINS);
+    int is_builtin = __builtin_func(cmd_type, builtins);
 
     // If not, check if it's an executable in PATH
     if (!is_builtin) {
@@ -267,7 +265,7 @@ void __ext_cmd(const char *cmd, char **args) {
  **/
 int main(int argc, char *argv[]) {
     // List of builtin commands
-    const char *builtins[NUM_BUILTINS] = {"exit", "echo", "type", "pwd", "cd"};
+    const char *builtins[] = {"exit", "echo", "type", "pwd", "cd", NULL};
 
     while (1) {
         // Print the prompt and flush stdout
@@ -295,7 +293,7 @@ int main(int argc, char *argv[]) {
         } else if (!strcmp(cmd, "pwd")) {
             __pwd();
         } else if (!strcmp(cmd, "type")) {
-            __type(toks, builtins, NUM_BUILTINS);
+            __type(toks, builtins);
         } else {
             __ext_cmd(cmd, toks);
         }
