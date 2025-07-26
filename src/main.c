@@ -62,7 +62,7 @@ int __builtin_func(const char *cmd_type, const char *builtins[]) {
 }
 
 /**
- * @brief  This function extracts tokens from a given input string.
+ * @brief This function extracts tokens from a given string.
  * It duplicates the input string to avoid modifying the original. Therefore,
  * the caller is responsible for freeing the memory allocated for the tokens.
  *
@@ -73,7 +73,7 @@ char **__get_tokens(char *str) {
     int capacity = 10;  // Initial capacity for the array of pointers
     char **argv = malloc(capacity * sizeof(char *));
     int idx = 0;
-
+	
     // Skip leading spaces
     char *ptr = str;
     while (*ptr == ' ') ptr++;
@@ -85,18 +85,28 @@ char **__get_tokens(char *str) {
 
         // process all consecutive parts as a single token
         while (*ptr && *ptr != ' ') {
-            // Hanndle single and double quotes
-            if (*ptr == '\'' || *ptr == '\"') {
-                char quote = *ptr++;  // save quote char and skip it
+            if (*ptr == '\'') {
+                // handles single quotes 
+                char quote = *ptr++;  
+                while (*ptr && *ptr != quote) *write_ptr++ = *ptr++; 
+                if (*ptr == quote) ptr++;  
+            } else if (*ptr == '\"') {
+                // handles double quotes
+                char quote = *ptr++;  
                 while (*ptr && *ptr != quote) {
-                    *write_ptr++ = *ptr++;  // copy until closing quote
+                    // skip backslash for escaped \ or "
+                    if (*ptr == '\\' && (*(ptr + 1) == '\\' || *(ptr + 1) == '\"')) {
+                        ptr++;  
+                    }
+                    *write_ptr++ = *ptr++;
                 }
-                if (*ptr == quote) ptr++;  // skip closing quote
+                if (*ptr == quote) ptr++;  
 			} else if (*ptr == '\\') {
+                // handles escape char outside quotes -> preserve next char
 				ptr++;
 				if (*ptr) *write_ptr++ = *ptr++;
             } else {
-                // copy normal character
+                // copy normal char
                 *write_ptr++ = *ptr++;
             }
         }
@@ -113,10 +123,8 @@ char **__get_tokens(char *str) {
             }
         }
 
-        // Add the token to the array
+        // Add the token to array and skip trailing spaces until next character
         argv[idx++] = tok;
-
-        // Skip trailing spaces until next character
         while (*ptr == ' ') ptr++;
     }
 
