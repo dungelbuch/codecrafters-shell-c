@@ -1,34 +1,53 @@
-[![progress-banner](https://backend.codecrafters.io/progress/shell/e4b2e0d3-34fd-41da-bde6-44699f5419d2)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# 🐚 My Own Shell – CodeCrafters Challenge
 
-This is a starting point for C solutions to the
-["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
+This project is my implementation of a Unix-style shell, built step-by-step as part of the [CodeCrafters](https://codecrafters.io) "Build Your Own Shell" challenge.
 
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+## Features Implemented
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+### Core Stages
+- [x] **Print a prompt**  
+- [x] **Handle invalid commands**
+- [x] **REPL loop** (read-eval-print loop)
+- [x] **`exit` builtin**
+- [x] **`echo` builtin**
+- [x] **`type` builtin for shell builtins**
+- [x] **`type` builtin for executables**
+- [x] **Execute external programs**
 
-# Passing the first stage
 
-The entry point for your `shell` implementation is in `src/main.c`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+### Navigation
+- [x] **`pwd` builtin** – prints current working directory
+- [x] **`cd` with absolute paths**
+- [x] **`cd` with relative paths**
+- [x] **`cd` with no args → goes to `$HOME`**
 
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
+### Quoting
+- [x] **Single quotes** `'...'` – preserves all characters literally
+- [x] **Double quotes** `"..."` – allows variable expansion and escape sequences (in later stages)
+- [x] **Backslash outside quotes** – escapes the next character
+- [x] **Backslash within single quotes** – treated literally (no escape)
+- [x] **Backslash within double quotes** – escapes `"`, `\`, `$`, and `` ` ``
+- [x] **Quoted executable names**
+
+---
+
+## Setup Instructions
+
+In order to compile the shell, you need to have a C compiler and CMake installed.
+
+On Ubuntu/Debian:
+
+```bash
+sudo apt update
+sudo apt install build-essential
+sudo apt install cmake
 ```
 
-Time to move on to the next stage!
+On MacOS:
 
-# Stage 2 & beyond
+```bash
+xcode-select --install
+brew install cmake
+```
 
-Note: This section is for stages 2 and beyond.
-
-1. Ensure you have `cmake` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `src/main.c`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+Additionally, you need to install vcpkg by running the setup.sh script in the repository root and following the instructions to set up the VCPKG_ROOT environment variable:
