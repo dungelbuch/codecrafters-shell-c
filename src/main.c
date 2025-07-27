@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #define NUM_BUILTINS 10
@@ -292,6 +293,12 @@ int main(int argc, char *argv[]) {
 
         // Extract tokens from input
         char **toks = __get_tokens(input);
+        if (toks[0] == NULL) {
+            // If no command is entered, free tokens and continue
+            for (int i = 0; toks[i] != NULL; i++) free(toks[i]);
+            free(toks);
+            continue;
+        }
         char *cmd = toks[0];
 
         if (!strcmp(cmd, "echo")) {
