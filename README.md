@@ -5,6 +5,7 @@ This project is my implementation of a Unix-style shell, built step-by-step as p
 ## Features Implemented
 
 ### Core Stages
+
 - [x] **Print a prompt**  
 - [x] **Handle invalid commands**
 - [x] **REPL loop** (read-eval-print loop)
@@ -14,14 +15,15 @@ This project is my implementation of a Unix-style shell, built step-by-step as p
 - [x] **`type` builtin for executables**
 - [x] **Execute external programs**
 
-
 ### Navigation
+
 - [x] **`pwd` builtin** – prints current working directory
 - [x] **`cd` with absolute paths**
 - [x] **`cd` with relative paths**
 - [x] **`cd` with no args → goes to `$HOME`**
 
 ### Quoting
+
 - [x] **Single quotes** `'...'` – preserves all characters literally
 - [x] **Double quotes** `"..."` – allows escape sequences (and variable expansion in later stages)
 - [x] **Backslash outside quotes** – escapes the next character
@@ -30,10 +32,43 @@ This project is my implementation of a Unix-style shell, built step-by-step as p
 - [x] **Quoted executable names**
 
 ### Redirection
+
 - [x] **Redirect stdout** – `command > file`
 - [ ] **Redirect stderr** – `command 2> file`
 - [ ] **Append stdout** – `command >> file`
 - [ ] **Append stderr** – `command 2>> file`
+
+### Builtin completion
+
+- [ ] **Completion with arguments**
+- [ ] **Missing completions**
+- [ ] **Executable completion**
+- [ ] **Multiple completions**
+- [ ] **Partial completions**
+
+### Pipelines
+
+- [ ] **Dual-command pipeline**
+- [ ] **Pipelines with built-ins**
+- [ ] **Multi-command pipelines**
+
+### History
+
+- [ ] **The history builtin**
+- [ ] **Listing history**
+- [ ] **Limiting history entries**
+- [ ] **Up-arrow navigation**
+- [ ] **Down-arrow navigation**
+- [ ] **Executing commands from history**
+
+### History Persistence
+
+- [ ] **Read history from file**
+- [ ] **Write history to file**
+- [ ] **Append history to file**
+- [ ] **Read history on startup**
+- [ ] **Write history on exit**
+- [ ] **Append history on exit**
 
 ---
 
