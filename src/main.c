@@ -11,7 +11,7 @@
 #define PATH_MAX_LEN 1024
 
 /**
- * @brief This function check if a given command exists in the system's PATH.
+ * @brief This function checks if a given command exists in the system's PATH.
  *
  * @param cmd The command to search for.
  * @return char* The full path of the command if found, NULL otherwise.
@@ -44,7 +44,7 @@ char *__find_binary(const char *cmd) {
 }
 
 /**
- * @brief Find builtin functions in the shell and print if found.
+ * @brief Checks if a command is a builtin function and prints the result.
  *
  * @param cmd_type The command to check.
  * @param builtins The list of builtin functions.
@@ -63,12 +63,11 @@ int __builtin_func(const char *cmd_type, const char *builtins[]) {
 }
 
 /**
- * @brief This function extracts tokens from a given string.
- * It duplicates the input string to avoid modifying the original. Therefore,
- * the caller is responsible for freeing the memory allocated for the tokens.
+ * @brief Extracts and parses tokens from a given string, handling quotes and escapes.
+ * Allocates memory for each token. The caller is responsible for freeing the memory.
  *
  * @param str The input string to be tokenized.
- * @return char** An array of pointers to the extracted tokens.
+ * @return char** An array of pointers to the extracted tokens, NULL-terminated.
  **/
 char **__get_tokens(char *str) {
     int capacity = 10;  // Initial capacity for the array of pointers
@@ -129,7 +128,7 @@ char **__get_tokens(char *str) {
         while (*ptr == ' ') ptr++;
     }
 
-    // Resize and null-terminate the array of tokens
+    // Resize token array and null-terminate it
     argv = realloc(argv, (idx + 1) * sizeof(char *));
     argv[idx] = NULL;
 
@@ -137,7 +136,7 @@ char **__get_tokens(char *str) {
 }
 
 /**
- * @brief This function forks a new process and executes a binary in it.
+ * @brief Forks a new process and executes a binary in it, waiting for completion.
  *
  * @param bin The binary to execute.
  * @param args The arguments to pass to the binary.
@@ -159,12 +158,12 @@ void __fork_and_exec(char *bin, char **args) {
     }
 }
 
-/******************************************************************************/
-/* Helper functions to offload specific commands.                             */
-/******************************************************************************/
+/**************************************************************************************************/
+/* Helper functions to offload specific commands.                                                 */
+/**************************************************************************************************/
 
 /**
- * @brief This function prints the arguments passed to it.
+ * @brief Prints the arguments passed to it, separated by spaces.
  *
  * @param args The arguments to print.
  */
@@ -178,10 +177,9 @@ void __echo(char **args) {
 }
 
 /**
- * @brief This function changes the current working directory to the one
- * specified in the input string.
+ * @brief Changes the current working directory. Supports '~' expansion and defaults to HOME.
  *
- * @param str The directory to change to.
+ * @param args The arguments array where args[1] is the target directory.
  **/
 void __cd(char **args) {
     const char *dir = args[1];  // skip the command itself
@@ -226,10 +224,9 @@ void __pwd() {
 }
 
 /**
- * @brief This function handles the 'type' command in the shell.
- * It checks if the command is a builtin or an executable in PATH.
+ * @brief Handles the 'type' command, checking if a command is builtin or executable in PATH.
  *
- * @param cmd The command to check.
+ * @param args The command arguments where args[1] is the command to check.
  * @param builtins The list of builtin functions.
  **/
 void __type(char **args, const char *builtins[]) {
@@ -251,7 +248,7 @@ void __type(char **args, const char *builtins[]) {
 }
 
 /**
- * @brief Handle external commands, by finding the binary in PATH and executing it.
+ * @brief Handles external commands, by finding the binary in PATH and executing it.
  *
  * @param cmd The command to execute.
  * @param args The arguments for the command.
@@ -261,12 +258,12 @@ void __ext_cmd(const char *cmd, char **args) {
     bin ? __fork_and_exec(bin, args) : printf("%s: command not found\n", cmd);
 }
 
-/******************************************************************************/
-/* Main function of the shell.                                                */
-/******************************************************************************/
+/**************************************************************************************************/
+/* Main function of the shell.                                                                    */
+/**************************************************************************************************/
 
 /**
- * @brief Main function of the shell.
+ * @brief Main function of the shell. Implements a REPL loop for command processing.
  *
  * @param argc Number of command line arguments.
  * @param argv Array of command line arguments.
