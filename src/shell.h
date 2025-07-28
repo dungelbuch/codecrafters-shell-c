@@ -10,9 +10,11 @@
 #include <fcntl.h>
 
 // All constants in one place
-#define NUM_BUILTINS 10
 #define INPUT_LEN 1024
 #define PATH_MAX_LEN 1024
+
+// Tokenizer function (from main.c)
+char **__get_tokens(char *str);
 
 // Builtin functions (from builtins.c)
 void __echo(char **args);
@@ -26,7 +28,15 @@ char *__find_binary(const char *cmd);
 void __fork_and_exec(char *bin, char **args);
 void __ext_cmd(const char *cmd, char **args);
 
-// Tokenizer function (from main.c)
-char **__get_tokens(char *str);
+// Redirection functions (from redirection.c)
+typedef struct {
+    char *output_file;     // Output file for redirection
+    int stdout_fd_backup;  // Backup of original stdout file descriptor
+    int output_fd;         // File descriptor for the output file
+} redirection_t;
+redirection_t *__init_redir_struct(void);
+void __setup_redirection(char **tokens, redirection_t *redir);
+void __restore_redirection(redirection_t *redir);
+
 
 #endif // SHELL_H

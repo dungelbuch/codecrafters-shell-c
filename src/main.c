@@ -96,9 +96,7 @@ int main(int argc, char *argv[]) {
         input[strlen(input) - 1] = '\0';
 
         // Check for exit command
-        if (!strcmp(input, "exit") || !strcmp(input, "exit 0")) {
-            return 0;
-        }
+        if (!strcmp(input, "exit") || !strcmp(input, "exit 0")) return 0;
 
         // Extract tokens from input
         char **toks = __get_tokens(input);
@@ -108,8 +106,13 @@ int main(int argc, char *argv[]) {
             free(toks);
             continue;
         }
-        char *cmd = toks[0];
 
+        // Redirection handling
+        redirection_t *redir = __init_redir_struct();
+        __setup_redirection(toks, redir);
+        
+        // Execute the command based on the first token
+        char *cmd = toks[0];
         if (!strcmp(cmd, "echo")) {
             __echo(toks);
         } else if (!strcmp(cmd, "cd")) {
@@ -122,10 +125,11 @@ int main(int argc, char *argv[]) {
             __ext_cmd(cmd, toks);
         }
 
+        // Restore redirection if it was setup
+        __restore_redirection(redir);
+
         // Free the memory allocated for tokens
-        for (int i = 0; toks[i] != NULL; i++) {
-            free(toks[i]);
-        }
+        for (int i = 0; toks[i] != NULL; i++) free(toks[i]);
         free(toks);
     }
 

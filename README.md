@@ -23,11 +23,17 @@ This project is my implementation of a Unix-style shell, built step-by-step as p
 
 ### Quoting
 - [x] **Single quotes** `'...'` – preserves all characters literally
-- [x] **Double quotes** `"..."` – allows variable expansion and escape sequences (in later stages)
+- [x] **Double quotes** `"..."` – allows escape sequences (and variable expansion in later stages)
 - [x] **Backslash outside quotes** – escapes the next character
 - [x] **Backslash within single quotes** – treated literally (no escape)
 - [x] **Backslash within double quotes** – escapes `"`, `\`, `$`, and `` ` ``
 - [x] **Quoted executable names**
+
+### Redirection
+- [x] **Redirect stdout** – `command > file`
+- [ ] **Redirect stderr** – `command 2> file`
+- [ ] **Append stdout** – `command >> file`
+- [ ] **Append stderr** – `command 2>> file`
 
 ---
 
@@ -51,3 +57,9 @@ brew install cmake
 ```
 
 Additionally, you need to install vcpkg by running the setup.sh script in the repository root and following the instructions to set up the VCPKG_ROOT environment variable:
+
+## Compile and Run the Shell
+
+```bash
+./your_shell.sh
+```
