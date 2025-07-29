@@ -2,12 +2,13 @@
 #define SHELL_H
 
 // All includes in one place
+#include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/wait.h>
-#include <fcntl.h>
+#include <unistd.h>
 
 // All constants in one place
 #define INPUT_LEN 1024
@@ -30,13 +31,13 @@ void __ext_cmd(const char *cmd, char **args);
 
 // Redirection functions (from redirection.c)
 typedef struct {
-    char *output_file;     // Output file for redirection
-    int stdout_fd_backup;  // Backup of original stdout file descriptor
-    int output_fd;         // File descriptor for the output file
+    char *output_file;  // Output file for redirection
+    int std_type;       // Type of redirection (STDOUT_FILENO or STDERR_FILENO)
+    int std_fd_backup;  // Backup of original std file descriptor
+    int output_fd;      // File descriptor for the output file
 } redirection_t;
 redirection_t *__init_redir_struct(void);
 void __setup_redirection(char **tokens, redirection_t *redir);
 void __restore_redirection(redirection_t *redir);
 
-
-#endif // SHELL_H
+#endif  // SHELL_H

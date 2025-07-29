@@ -11,7 +11,7 @@ char **__get_tokens(char *str) {
     int capacity = 10;  // Initial capacity for the array of pointers
     char **argv = malloc(capacity * sizeof(char *));
     int idx = 0;
-	
+
     // Skip leading spaces
     char *ptr = str;
     while (*ptr == ' ') ptr++;
@@ -24,25 +24,25 @@ char **__get_tokens(char *str) {
         // process all consecutive parts as a single token
         while (*ptr && *ptr != ' ') {
             if (*ptr == '\'') {
-                // handles single quotes 
-                char quote = *ptr++;  
-                while (*ptr && *ptr != quote) *write_ptr++ = *ptr++; 
-                if (*ptr == quote) ptr++;  
+                // handles single quotes
+                char quote = *ptr++;
+                while (*ptr && *ptr != quote) *write_ptr++ = *ptr++;
+                if (*ptr == quote) ptr++;
             } else if (*ptr == '\"') {
                 // handles double quotes
-                char quote = *ptr++;  
+                char quote = *ptr++;
                 while (*ptr && *ptr != quote) {
                     // skip backslash for escaped \ or "
                     if (*ptr == '\\' && (*(ptr + 1) == '\\' || *(ptr + 1) == '\"')) {
-                        ptr++;  
+                        ptr++;
                     }
                     *write_ptr++ = *ptr++;
                 }
-                if (*ptr == quote) ptr++;  
-			} else if (*ptr == '\\') {
+                if (*ptr == quote) ptr++;
+            } else if (*ptr == '\\') {
                 // handles escape char outside quotes -> preserve next char
-				ptr++;
-				if (*ptr) *write_ptr++ = *ptr++;
+                ptr++;
+                if (*ptr) *write_ptr++ = *ptr++;
             } else {
                 // copy normal char
                 *write_ptr++ = *ptr++;
@@ -72,7 +72,6 @@ char **__get_tokens(char *str) {
 
     return argv;
 }
-
 
 /**
  * @brief Main function of the shell. Implements a REPL loop for command processing.
@@ -110,7 +109,7 @@ int main(int argc, char *argv[]) {
         // Redirection handling
         redirection_t *redir = __init_redir_struct();
         __setup_redirection(toks, redir);
-        
+
         // Execute the command based on the first token
         char *cmd = toks[0];
         if (!strcmp(cmd, "echo")) {
