@@ -35,6 +35,7 @@ typedef struct {
     int std_type;       // Type of redirection (STDOUT_FILENO or STDERR_FILENO)
     int std_fd_backup;  // Backup of original std file descriptor
     int output_fd;      // File descriptor for the output file
+    int append_mode;    // 1 for append (>>), 0 for overwrite (>)
 } redirection_t;
 redirection_t *__init_redir_struct(void);
 void __setup_redirection(char **tokens, redirection_t *redir);

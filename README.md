@@ -35,7 +35,7 @@ This project is my implementation of a Unix-style shell, built step-by-step as p
 
 - [x] **Redirect stdout** – `command > file`
 - [x] **Redirect stderr** – `command 2> file`
-- [ ] **Append stdout** – `command >> file`
+- [x] **Append stdout** – `command >> file`
 - [ ] **Append stderr** – `command 2>> file`
 
 ### Builtin completion
